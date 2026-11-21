@@ -28,3 +28,6 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Storefront architecture
+- Read products and variants from Shopify Storefront API and create/update carts through its Cart API, so catalog and checkout remain authoritative in Shopify.
