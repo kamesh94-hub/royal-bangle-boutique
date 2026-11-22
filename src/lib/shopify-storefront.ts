@@ -4,6 +4,7 @@ const SHOPIFY_API_VERSION = "2026-10";
 const SHOPIFY_STORE_PERMANENT_DOMAIN = "royal-bangle-boutique-g9wow-9dv3n8ng.myshopify.com";
 const SHOPIFY_STOREFRONT_TOKEN = "0705f029f71687975868807627cc7e72";
 const SHOPIFY_STOREFRONT_URL = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/api/${SHOPIFY_API_VERSION}/graphql.json`;
+export const SHOPIFY_ADMIN_URL = "https://admin.shopify.com/store/royal-bangle-boutique-g9wow-9dv3n8ng";
 
 export interface ShopifyMoney {
   amount: string;
@@ -18,6 +19,7 @@ export interface ShopifySelectedOption {
 export interface ShopifyVariant {
   id: string;
   title: string;
+  sku: string | null;
   price: ShopifyMoney;
   compareAtPrice: ShopifyMoney | null;
   availableForSale: boolean;
@@ -106,6 +108,7 @@ const PRODUCT_FIELDS = `
       node {
         id
         title
+        sku
         price { amount currencyCode }
         compareAtPrice { amount currencyCode }
         availableForSale
@@ -141,6 +144,27 @@ export async function fetchShopifyProduct(handle: string): Promise<ShopifyProduc
   return data.product ? normalizeProduct(data.product) : null;
 }
 
+export interface ShopifyStorePolicies {
+  shippingPolicy: { title: string; body: string; url: string } | null;
+  refundPolicy: { title: string; body: string; url: string } | null;
+  termsOfService: { title: string; body: string; url: string } | null;
+  privacyPolicy: { title: string; body: string; url: string } | null;
+}
+
+export async function fetchShopifyStorePolicies(): Promise<ShopifyStorePolicies> {
+  const data = await storefrontApiRequest<{ shop: ShopifyStorePolicies }>(`
+    query StorePolicies {
+      shop {
+        shippingPolicy { title body url }
+        refundPolicy { title body url }
+        termsOfService { title body url }
+        privacyPolicy { title body url }
+      }
+    }
+  `);
+  return data.shop;
+}
+
 export const shopifyProductsQueryOptions = queryOptions({
   queryKey: ["shopify", "products"],
   queryFn: fetchShopifyProducts,
@@ -153,6 +177,12 @@ export const shopifyProductQueryOptions = (handle: string) =>
     queryFn: () => fetchShopifyProduct(handle),
     staleTime: 60_000,
   });
+
+export const shopifyStorePoliciesQueryOptions = queryOptions({
+  queryKey: ["shopify", "policies"],
+  queryFn: fetchShopifyStorePolicies,
+  staleTime: 60_000,
+});
 
 export function formatShopifyCheckoutUrl(checkoutUrl: string): string {
   const url = new URL(checkoutUrl);
